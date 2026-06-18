@@ -18,7 +18,7 @@ namespace BlazorHybridTP4.Services
             _httpClient = httpClient;
         }
 
-        // GET: Obtener productos
+        // GET: Obtener lista
         public async Task<List<Product>> GetProductsAsync()
         {
             try
@@ -27,7 +27,7 @@ namespace BlazorHybridTP4.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error al obtener los datos: {ex.Message}");
+                Console.WriteLine($"Error al obtener datos: {ex.Message}");
                 return new List<Product>();
             }
         }
