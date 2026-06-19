@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading.Tasks;
 using BlazorHybridTP4.Models;
 
-
 namespace BlazorHybridTP4.Services
 {
     public class ProductService : IProductService
@@ -18,41 +17,50 @@ namespace BlazorHybridTP4.Services
             _httpClient = httpClient;
         }
 
-        // GET: Obtener lista
-        public async Task<List<Product>> GetProductsAsync()
+        public async Task<(List<Product> productos, string status)> GetProductsAsync()
         {
-            try
+            var response = await _httpClient.GetAsync("products");
+            string statusMsg = $"{(int)response.StatusCode} {response.ReasonPhrase}";
+
+            if (response.IsSuccessStatusCode)
             {
-                return await _httpClient.GetFromJsonAsync<List<Product>>("products");
+                var productos = await response.Content.ReadFromJsonAsync<List<Product>>();
+                return (productos ?? new List<Product>(), statusMsg);
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error al obtener datos: {ex.Message}");
-                return new List<Product>();
-            }
+            return (new List<Product>(), statusMsg);
         }
 
-        // POST: Crear producto
-        public async Task<Product> CreateProductAsync(Product newProduct)
+        public async Task<(Product producto, string status)> CreateProductAsync(Product newProduct)
         {
             var response = await _httpClient.PostAsJsonAsync("products/", newProduct);
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<Product>();
+            string statusMsg = $"{(int)response.StatusCode} {response.ReasonPhrase}";
+
+            if (response.IsSuccessStatusCode)
+            {
+                var producto = await response.Content.ReadFromJsonAsync<Product>();
+                return (producto, statusMsg);
+            }
+            return (null, statusMsg);
         }
 
-        // PUT: Actualizar producto
-        public async Task<Product> UpdateProductAsync(int id, Product updatedProduct)
+        public async Task<(Product producto, string status)> UpdateProductAsync(int id, Product updatedProduct)
         {
             var response = await _httpClient.PutAsJsonAsync($"products/{id}", updatedProduct);
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<Product>();
+            string statusMsg = $"{(int)response.StatusCode} {response.ReasonPhrase}";
+
+            if (response.IsSuccessStatusCode)
+            {
+                var producto = await response.Content.ReadFromJsonAsync<Product>();
+                return (producto, statusMsg);
+            }
+            return (null, statusMsg);
         }
 
-        // DELETE: Eliminar producto
-        public async Task<bool> DeleteProductAsync(int id)
+        public async Task<(bool exito, string status)> DeleteProductAsync(int id)
         {
             var response = await _httpClient.DeleteAsync($"products/{id}");
-            return response.IsSuccessStatusCode;
+            string statusMsg = $"{(int)response.StatusCode} {response.ReasonPhrase}";
+            return (response.IsSuccessStatusCode, statusMsg);
         }
     }
 }

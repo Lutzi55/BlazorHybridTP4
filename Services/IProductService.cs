@@ -9,9 +9,9 @@ namespace BlazorHybridTP4.Services
 {
     internal interface IProductService
     {
-        Task<List<Product>> GetProductsAsync();
-        Task<Product> CreateProductAsync(Product newProduct);
-        Task<Product> UpdateProductAsync(int id, Product updatedProduct);
-        Task<bool> DeleteProductAsync(int id);
+        Task<(List<Product> productos, string status)> GetProductsAsync();
+        Task<(Product producto, string status)> CreateProductAsync(Product newProduct);
+        Task<(Product producto, string status)> UpdateProductAsync(int id, Product updatedProduct);
+        Task<(bool exito, string status)> DeleteProductAsync(int id);
     }
 }

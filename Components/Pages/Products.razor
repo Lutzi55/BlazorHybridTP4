@@ -2,14 +2,18 @@
 @page "/productos"
 @using BlazorHybridTP4.Models
 @using BlazorHybridTP4.Services
-@inject IJSRuntime JS
 @inject IProductService productService
+@inject IJSRuntime JS
 
 <div class="container-fluid py-3">
-    <h3 class="mb-4">Gestión de Productos - Platzi Fake API</h3>
+    <h3 class="mb-2">Gestión de Productos - Platzi Fake API</h3>
+
+    <div class="mb-4">
+        <span class="badge bg-dark fs-6">Respuesta del Servidor: <span class="text-warning">@httpStatus</span></span>
+    </div>
 
     <div class="card p-4 mb-4 shadow-sm" style="background-color: #f8f9fa; border-left: 5px solid @(esEdicion ? "#ffc107" : "#198754");">
-        <h5 class="mb-3">@(esEdicion ? "✏️ Editar Producto" : "➕ Agregar Nuevo Producto")</h5>
+        <h5 class="mb-3">@(esEdicion ? " Editar Producto" : "➕ Agregar Nuevo Producto")</h5>
         <div class="row g-3">
             <div class="col-md-5">
                 <input type="text" class="form-control" placeholder="Título del producto" @bind="productoActual.Title" />
@@ -27,61 +31,89 @@
             </div>
             @if (esEdicion)
             {
-                <div class="col-md-2">
-                    <button class="btn btn-outline-secondary w-100" @onclick="CancelarEdicion">Cancelar</button>
-                </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-outline-secondary w-100" @onclick="CancelarEdicion">Cancelar</button>
+                    </div>
             }
         </div>
         @if (!string.IsNullOrEmpty(mensaje))
         {
-            <div class="alert alert-info mt-3 mb-0 py-2">@mensaje</div>
+                <div class="alert alert-info mt-3 mb-0 py-2">@mensaje</div>
         }
     </div>
 
+    <h4 class="mb-3 text-primary"> Productos Activos</h4>
     @if (productos == null)
     {
-        <div class="d-flex justify-content-center mt-5">
-            <div class="spinner-border text-primary" role="status"></div>
-            <span class="ms-3">Conectando con Platzi...</span>
-        </div>
+            <div class="d-flex justify-content-center mt-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <span class="ms-3">Conectando con Platzi...</span>
+            </div>
+    }
+    else if (!productos.Any())
+    {
+            <div class="alert alert-light border">No hay productos activos para mostrar.</div>
     }
     else
     {
-        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+            <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4 mb-5">
             @foreach (var prod in productos)
             {
-                <div class="col">
-                    <div class="card h-100 shadow-sm">
+                        <div class="col">
+                            <div class="card h-100 shadow-sm border-0 bg-white">
                         @{
-                            // La API de Platzi a veces devuelve caracteres extraños en las URLs de las imágenes. Esto lo limpia.
                             var imageUrl = prod.Images != null && prod.Images.Length > 0
-                            ? prod.Images[0].Trim('[', ']', '"')
-                            : "https://via.placeholder.com/640x480?text=Sin+Imagen";
+                                            ? prod.Images[0].Trim('[', ']', '"')
+                                            : "https://via.placeholder.com/640x480?text=Sin+Imagen";
                         }
-                        <img src="@imageUrl" class="card-img-top" alt="@prod.Title" style="height: 200px; object-fit: cover;" onerror="this.src='https://via.placeholder.com/640x480?text=Imagen+No+Disponible'">
+                                <img src="@imageUrl" class="card-img-top" alt="@prod.Title" style="height: 200px; object-fit: cover;" onerror="this.src='https://via.placeholder.com/640x480?text=Imagen+No+Disponible'">
 
-                        <div class="card-body d-flex flex-column">
-                            <h6 class="card-title text-truncate" title="@prod.Title">@prod.Title</h6>
-                            <h5 class="card-text fw-bold text-success mb-3">$@prod.Price</h5>
+                                <div class="card-body d-flex flex-column">
+                                    <h6 class="card-title text-truncate" title="@prod.Title">@prod.Title</h6>
+                                    <h5 class="card-text fw-bold text-success mb-3">$@prod.Price</h5>
 
-                            <div class="mt-auto d-flex gap-2">
-                                <button class="btn btn-sm btn-outline-warning w-50" @onclick="() => PrepararEdicion(prod)">Editar</button>
-                                <button class="btn btn-sm btn-outline-danger w-50" @onclick="() => EliminarProducto(prod.Id)">Eliminar</button>
+                                    <div class="mt-auto d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-primary w-50" @onclick="() => PrepararEdicion(prod)">Editar</button>
+                                        <button class="btn btn-sm btn-outline-secondary w-50" @onclick="() => DiscontinuarProducto(prod)">Discontinuar</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
             }
-        </div>
+            </div>
+    }
+
+    @if (productosDiscontinuados.Any())
+    {
+            <hr class="my-5" />
+            <h4 class="mb-3 text-secondary"> Artículos Discontinuados (Vista Admin)</h4>
+            <div class="row row-cols-1 row-cols-md-4 g-3">
+            @foreach (var prod in productosDiscontinuados)
+            {
+                        <div class="col">
+                            <div class="card h-100 bg-light" style="opacity: 0.8; border: 1px dashed #dc3545;">
+                                <div class="card-body p-2 d-flex flex-column">
+                                    <small class="text-muted fw-bold">ID: @prod.Id</small>
+                                    <h6 class="card-title text-truncate mb-1" style="font-size: 0.9rem;">@prod.Title</h6>
+                                    <div class="mt-auto d-flex gap-1">
+                                        <button class="btn btn-sm btn-success flex-grow-1" style="font-size: 0.75rem;" @onclick="() => RestaurarProducto(prod)">Restaurar</button>
+                                        <button class="btn btn-sm btn-danger flex-grow-1" style="font-size: 0.75rem;" @onclick="() => EliminarDefinitivo(prod.Id)">Eliminar API</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+            }
+            </div>
     }
 </div>
 
 @code {
     private List<Product> productos;
+    private List<Product> productosDiscontinuados = new List<Product>();
     private Product productoActual = new Product { Images = new[] { "https://placeimg.com/640/480/any" }, CategoryId = 1, Description = "Item TP4" };
 
-    // Variables para controlar si estamos creando o editando
     private string mensaje = "";
+    private string httpStatus = "Esperando acción...";
     private bool esEdicion = false;
     private int idEdicion = 0;
 
@@ -92,30 +124,34 @@
 
     private async Task CargarProductos()
     {
-        productos = await productService.GetProductsAsync();
+        var result = await productService.GetProductsAsync();
+        httpStatus = result.status;
+
+        var todosLosProductos = result.productos;
+        productos = todosLosProductos
+            .Where(p => !productosDiscontinuados.Any(d => d.Id == p.Id))
+            .ToList();
     }
 
-    // Unifica POST y PUT en el mismo botón
     private async Task GuardarProducto()
     {
         if (esEdicion)
         {
-            // Ejecuta el PUT
-            var res = await productService.UpdateProductAsync(idEdicion, productoActual);
-            if (res != null) mensaje = $"¡Producto {res.Id} actualizado con éxito!";
+            var result = await productService.UpdateProductAsync(idEdicion, productoActual);
+            httpStatus = result.status;
+            if (result.producto != null) mensaje = $"¡Producto {result.producto.Id} actualizado con éxito!";
         }
         else
         {
-            // Ejecuta el POST
-            var res = await productService.CreateProductAsync(productoActual);
-            if (res != null) mensaje = $"¡Producto {res.Id} creado con éxito!";
+            var result = await productService.CreateProductAsync(productoActual);
+            httpStatus = result.status;
+            if (result.producto != null) mensaje = $"¡Producto {result.producto.Id} creado con éxito!";
         }
 
-        CancelarEdicion(); // Resetea el formulario
-        await CargarProductos(); // Recarga la lista para ver los cambios
+        CancelarEdicion();
+        await CargarProductos();
     }
 
-    // Llena el formulario con los datos de la card seleccionada
     private void PrepararEdicion(Product prod)
     {
         esEdicion = true;
@@ -139,17 +175,38 @@
         mensaje = "";
     }
 
-    private async Task EliminarProducto(int id)
+    private async Task DiscontinuarProducto(Product prod)
     {
-        // 1. Lanzamos la alerta nativa del navegador/sistema
-        bool confirmado = await JS.InvokeAsync<bool>("confirm", $"⚠️ ¡Atención!\n\n¿Estás segura de que querés eliminar permanentemente el producto ID {id}?\nEsta acción no se puede deshacer en el servidor.");
-
-        // 2. Solo ejecutamos el borrado si el usuario hizo clic en "Aceptar"
+        bool confirmado = await JS.InvokeAsync<bool>("confirm", $"¿Mover '{prod.Title}' a la lista de discontinuados?");
         if (confirmado)
         {
-            if (await productService.DeleteProductAsync(id))
+            productosDiscontinuados.Add(prod);
+            await CargarProductos();
+            mensaje = $"Producto movido a discontinuados.";
+        }
+    }
+
+    private async Task RestaurarProducto(Product prod)
+    {
+        productosDiscontinuados.Remove(prod);
+        await CargarProductos();
+        mensaje = $"Producto '{prod.Title}' restaurado.";
+    }
+
+    private async Task EliminarDefinitivo(int id)
+    {
+        bool confirmado = await JS.InvokeAsync<bool>("confirm", $"⚠️ ADVERTENCIA CRÍTICA\n\n¿Estás seguro de que querés borrar el ID {id} de la base de datos de la API?\n\n¡Esta acción no se puede deshacer!");
+        if (confirmado)
+        {
+            var result = await productService.DeleteProductAsync(id);
+            httpStatus = result.status;
+
+            if (result.exito)
             {
-                mensaje = $"Producto {id} eliminado correctamente.";
+                var prod = productosDiscontinuados.FirstOrDefault(p => p.Id == id);
+                if (prod != null) productosDiscontinuados.Remove(prod);
+
+                mensaje = $"Producto {id} eliminado definitivamente del servidor.";
                 await CargarProductos();
             }
         }
